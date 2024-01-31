@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Interactivo con Leaflet.js</title>
+    <!-- Agrega los archivos CSS de Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Estilo para el contenedor del mapa -->
+    <style>
+        #mapid {
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapa Interactivo con Leaflet.js</h1>
+    <!-- Contenedor del mapa -->
+    <div id="mapid"></div>
+
+    <!-- Formulario para ingresar la distancia en kilómetros -->
+    <form id="distanceForm">
+        <label for="distance">Ingrese la distancia en kilómetros:</label>
+        <input type="number" id="distance" name="distance" min="1" step="any" required>
+    </form>
+
+    <!-- Agrega los archivos JavaScript de Leaflet -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Script para inicializar el mapa -->
+    <script>
+        // Inicializa el mapa en el contenedor con el ID 'mapid'
+        var mymap = L.map('mapid').setView([0, 0], 13);
+        var circle; // Variable para almacenar la circunferencia
+        var marker; // Variable para almacenar el marcador
+
+        // Agrega una capa de mosaicos (tiles) de OpenStreetMap al mapa
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(mymap);
+
+        // Obtiene la ubicación actual del usuario y coloca el marcador allí
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+            mymap.setView([latitude, longitude], 13);
+            marker = L.marker([latitude, longitude], { draggable: true }).addTo(mymap);
+            // Escucha el evento de arrastre del marcador
+            marker.on('drag', function(event) {
+                var distance = parseFloat(document.getElementById('distance').value); // Obtiene la distancia ingresada
+                if (isNaN(distance) || distance <= 0) { // Verifica si la distancia es válida
+                    alert('Por favor, ingrese una distancia válida en kilómetros.');
+                    return;
+                }
+                // Dibuja la circunferencia con el radio correspondiente en la nueva posición del marcador
+                drawCircle(distance, event.target.getLatLng());
+            });
+        });
+
+        // Escucha el evento de cambio en el campo de entrada de la distancia
+        document.getElementById('distance').addEventListener('change', function(event) {
+            var distance = parseFloat(event.target.value); // Obtiene la nueva distancia ingresada
+            if (isNaN(distance) || distance <= 0) { // Verifica si la distancia es válida
+                alert('Por favor, ingrese una distancia válida en kilómetros.');
+                return;
+            }
+            if (marker) {
+                // Dibuja la circunferencia con el radio correspondiente
+                drawCircle(distance, marker.getLatLng());
+            } else {
+                alert('No se ha podido obtener la ubicación actual del usuario.');
+            }
+        });
+
+        // Función para dibujar una circunferencia con el radio especificado
+        function drawCircle(radius, center) {
+            // Borra la circunferencia anterior, si existe
+            if (circle) {
+                mymap.removeLayer(circle);
+            }
+            // Dibuja una nueva circunferencia con el radio especificado
+            circle = L.circle(center, {
+                color: 'red',
+                fillColor: '#f03',
+                fillOpacity: 0.5,
+                radius: radius * 1000 // Convertir kilómetros a metros
+            }).addTo(mymap);
+        }
+    </script>
+</body>
+</html>
